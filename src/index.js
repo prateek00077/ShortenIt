@@ -1,16 +1,23 @@
 const express = require('express');
-const urlRouter = require('./routes/url');
 const connectDB = require('./config/db');
 const { URL } = require('./models/url');
-const staticRouter = require('./routes/staticRouter');
+const cookieparser = require('cookie-parser');
+const { isAuthenticated, checkAuth } = require('./middleware/isAuth');
 const path = require('path');
+
+const urlRouter = require('./routes/url');
+const userRouter = require('./routes/user');
+const staticRouter = require('./routes/staticRouter');
 
 const PORT = 5000;
 const app = express();
+
 app.use(express.json());
 app.use(express.urlencoded({ extended : false}));
-app.use('/url', urlRouter);
-app.use('/', staticRouter);
+app.use(cookieparser());
+app.use('/', checkAuth, staticRouter);
+app.use('/url', isAuthenticated, urlRouter);
+app.use('/user', userRouter);
 connectDB();
 
 app.set("view engine", "ejs");
