@@ -1,31 +1,34 @@
 const { getUser } = require("../services/auth");
 
-const isAuthenticated = ( req, res, next) => {
-    const uid = req.cookies?.uid;
+function checkForAuthentication (req, res, next) {
+    const tokenCookie = req.cookies?.uid;
 
-    if(!uid) {
-        return res.redirect("/login");
+    req.user = null;
+
+    if(!tokenCookie) {
+        return next();
     }
 
-    const user = getUser(uid);
-
-    if(!user) {
-        return res.redirect("/login");
-    }
+    const token = tokenCookie;
+    const user = getUser(token);
 
     req.user = user;
-    next();
+    return next();
 }
 
-const checkAuth = ( req, res, next) => {
-    const uid = req.cookies?.uid;
+// authorization purpose
 
-    const user = getUser(uid);
-    req.user = user;
-    next();
+function restrictTo (roles) {
+    return function (req, res, next) {
+        if(!req.user) return res.redirect('/login');
+
+        if(!roles.includes(req.user.role)) return res.end("UnAuthorized");
+
+        return next();
+    };
 }
 
 module.exports = {
-    isAuthenticated,
-    checkAuth
+    checkForAuthentication,
+    restrictTo
 }
